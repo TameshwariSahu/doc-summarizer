@@ -151,6 +151,7 @@ const summarizeText = async (req, res) => {
     const { text, format } = req.body;
 
     if (!text) {
+      console.log("Response data:", JSON.stringify(summary));
       return res.status(400).json({ message: 'Text bhejo!' });
     }
 
