@@ -6,7 +6,7 @@ const errorHandler = (err, req, res, next) => {
   }
 
   let statusCode = err.statusCode || 500;
-  let message = err.message || 'Server error!';
+  let message = err.message || 'Internal server error.';
 
   if (err.name === 'CastError') {
     statusCode = 400;
@@ -16,7 +16,7 @@ const errorHandler = (err, req, res, next) => {
   if (err.code === 11000) {
     statusCode = 400;
     const field = err.keyValue ? Object.keys(err.keyValue).join(', ') : 'field';
-    message = `Duplicate value: ${field} pehle se use ho chuka hai.`;
+    message = `Duplicate value: ${field} is already in use.`;
   }
 
   if (err.name === 'ValidationError') {
@@ -28,16 +28,16 @@ const errorHandler = (err, req, res, next) => {
 
   if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
-    message = 'Token invalid hai!';
+    message = 'Invalid token.';
   }
 
   if (err.name === 'TokenExpiredError') {
     statusCode = 401;
-    message = 'Token expire ho gaya. Dobara login karo.';
+    message = 'Token expired. Please log in again.';
   }
 
   if (statusCode === 500 && process.env.NODE_ENV === 'production') {
-    message = 'Server error! Baad mein try karo.';
+    message = 'Something went wrong. Please try again later.';
   }
 
   if (statusCode >= 500) {
