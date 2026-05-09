@@ -242,12 +242,20 @@ const getSummaryFromAI = async (text, format) => {
       const res = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
-          {
-            role: 'user',
-            content: `Summarize this section briefly in 3-4 sentences:\n\n${chunk}`
-          }
-        ],
-        max_tokens: 300
+     {
+      role: 'system',
+      content: 'You are an expert document summarizer. Be concise, accurate, and professional.'
+    },
+    {
+      role: 'user',
+      content: buildPrompt(finalText, format)
+    }
+  ],
+        max_tokens: 1000,
+        temperature: 0.3,
+        top_p: 1,
+        frequency_penalty: 0.3,
+        presence_penalty: 0
       });
       chunkSummaries.push(res.choices[0].message.content);
     }
