@@ -9,27 +9,34 @@ const register = async (req, res, next) => {
     const { name, email, password } = req.body;
 
     if (!name?.trim() || !email?.trim() || !password) {
-      return next(new AppError(400, 'Name, email aur password zaroori hain.'));
+      return next(new AppError(400, 'Name, email and password are required.'));
     }
 
-    // Check karo user already exist karta hai kya
+    // Email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return next(new AppError(400, 'Invalid email format.'));
+    }
+
+    // Password length check
+    if (password.length < 6) {
+      return next(new AppError(400, 'Password must be at least 6 characters.'));
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered hai!' });
+      return next(new AppError(400, 'Email is already registered.'));
     }
 
-    // Password hash karo
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // User banao
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword
     });
 
-    // JWT token banao
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
@@ -47,28 +54,24 @@ const register = async (req, res, next) => {
   }
 };
 
-// Login
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     if (!email?.trim() || !password) {
-      return next(new AppError(400, 'Email aur password zaroori hain.'));
+      return next(new AppError(400, 'Email and password are required.'));
     }
 
-    // User dhundho
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
-      return res.status(400).json({ message: 'Email ya password galat hai!' });
+      return next(new AppError(401, 'Invalid email or password.'));
     }
 
-    // Password check karo
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Email ya password galat hai!' });
+      return next(new AppError(401, 'Invalid email or password.'));
     }
 
-    // Token banao
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
@@ -86,17 +89,15 @@ const login = async (req, res, next) => {
   }
 };
 
-// Get current user
 const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     if (!user) {
-      return next(new AppError(404, 'User nahi mila.'));
+      return next(new AppError(404, 'User not found.'));
     }
     res.json(user);
   } catch (err) {
     next(err);
   }
 };
-
 module.exports = { register, login, getMe };
