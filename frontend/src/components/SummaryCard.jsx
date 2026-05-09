@@ -12,8 +12,7 @@ export function SummaryCard({ filename, date, format, summary, onDelete }) {
 
   const formatLabel = {
     bullets: "Bullet Points",
-    paragraph: "Paragraph",
-    json: "JSON",
+    paragraph: "Paragraph"
   };
 
   return (
