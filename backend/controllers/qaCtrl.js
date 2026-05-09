@@ -2,6 +2,7 @@ const OpenAI = require('openai');
 const DocumentQA = require('../models/DocumentQA');
 const StoredDocument = require('../models/StoredDocument');
 const Summary = require('../models/Summary');
+const AppError = require('../utils/AppError');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -70,17 +71,17 @@ const assertUserHasDocumentAccess = async (userId, contentHash) => {
   return !!summary;
 };
 
-const getFaq = async (req, res) => {
+const getFaq = async (req, res, next) => {
   try {
     const { contentHash } = req.params;
     if (!contentHash) {
-      return res.status(400).json({ message: 'contentHash chahiye.' });
+      return next(new AppError(400, 'contentHash chahiye.'));
     }
     const allowed = await assertUserHasDocumentAccess(req.user.id, contentHash);
     if (!allowed) {
-      return res.status(403).json({
-        message: 'FAQ dekhne ke liye is document ko pehle summarize karna hoga.'
-      });
+      return next(
+        new AppError(403, 'FAQ dekhne ke liye is document ko pehle summarize karna hoga.')
+      );
     }
     const faq = await DocumentQA.aggregate([
       { $match: { contentHash } },
@@ -104,31 +105,33 @@ const getFaq = async (req, res) => {
       }))
     );
   } catch (err) {
-    res.status(500).json({ message: 'Server error!', error: err.message });
+    next(err);
   }
 };
 
-const askQuestion = async (req, res) => {
+const askQuestion = async (req, res, next) => {
   try {
     const { contentHash, question } = req.body;
     if (!contentHash || typeof question !== 'string' || !question.trim()) {
-      return res.status(400).json({ message: 'contentHash aur question bhejo.' });
+      return next(new AppError(400, 'contentHash aur question bhejo.'));
     }
     const allowed = await assertUserHasDocumentAccess(req.user.id, contentHash);
     if (!allowed) {
-      return res.status(403).json({
-        message: 'Sawaal poochhne ke liye is document ko pehle summarize karna hoga.'
-      });
+      return next(
+        new AppError(403, 'Sawaal poochhne ke liye is document ko pehle summarize karna hoga.')
+      );
     }
     const stored = await StoredDocument.findOne({ contentHash });
     if (!stored) {
-      return res.status(404).json({ message: 'Document text nahi mila. Dobara upload karke try karo.' });
+      return next(
+        new AppError(404, 'Document text nahi mila. Dobara upload karke try karo.')
+      );
     }
 
     const qDisplay = question.trim();
     const qKey = normalizeQuestionKey(qDisplay);
     if (!qKey) {
-      return res.status(400).json({ message: 'Question sahi se likho.' });
+      return next(new AppError(400, 'Question sahi se likho.'));
     }
 
     let answer;
@@ -161,7 +164,7 @@ const askQuestion = async (req, res) => {
       fallback
     });
   } catch (err) {
-    res.status(500).json({ message: 'Server error!', error: err.message });
+    next(err);
   }
 };
 

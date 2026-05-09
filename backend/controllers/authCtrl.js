@@ -1,11 +1,16 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const AppError = require('../utils/AppError');
 
 // Register
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+
+    if (!name?.trim() || !email?.trim() || !password) {
+      return next(new AppError(400, 'Name, email aur password zaroori hain.'));
+    }
 
     // Check karo user already exist karta hai kya
     const existingUser = await User.findOne({ email });
@@ -38,14 +43,18 @@ const register = async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({ message: 'Server error!', error: err.message });
+    next(err);
   }
 };
 
 // Login
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
+    if (!email?.trim() || !password) {
+      return next(new AppError(400, 'Email aur password zaroori hain.'));
+    }
 
     // User dhundho
     const user = await User.findOne({ email });
@@ -73,17 +82,20 @@ const login = async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({ message: 'Server error!', error: err.message });
+    next(err);
   }
 };
 
 // Get current user
-const getMe = async (req, res) => {
+const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return next(new AppError(404, 'User nahi mila.'));
+    }
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: 'Server error!', error: err.message });
+    next(err);
   }
 };
 

@@ -4,6 +4,7 @@ const mammoth = require('mammoth');
 const Summary = require('../models/Summary');
 const StoredDocument = require('../models/StoredDocument');
 const { hashDocumentContent } = require('../utils/contentHash');
+const AppError = require('../utils/AppError');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const ALLOWED_FORMATS = new Set(['bullets', 'paragraph', 'json']);
@@ -275,14 +276,14 @@ const getSummaryFromAI = async (text, format) => {
 };
 
 // File upload + summarize
-const summarizeFile = async (req, res) => {
+const summarizeFile = async (req, res, next) => {
   let extractedText = '';
   let fileType = '';
   let format = 'bullets';
 
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'File upload karo!' });
+      return next(new AppError(400, 'File upload karo!'));
     }
 
     const requestedFormat = req.body.format || 'bullets';
@@ -300,11 +301,11 @@ const summarizeFile = async (req, res) => {
       extractedText = result.value;
       fileType = 'docx';
     } else {
-      return res.status(400).json({ message: 'Sirf PDF ya DOCX upload karo!' });
+      return next(new AppError(400, 'Sirf PDF ya DOCX upload karo!'));
     }
 
     if (!extractedText.trim()) {
-      return res.status(400).json({ message: 'Document mein text nahi mila!' });
+      return next(new AppError(400, 'Document mein text nahi mila!'));
     }
 
     const contentHash = hashDocumentContent(extractedText);
@@ -336,7 +337,9 @@ const summarizeFile = async (req, res) => {
   } catch (err) {
     const status = err.status || err.statusCode;
     if (status === 401) {
-      return res.status(500).json({ message: 'OpenAI auth failed. API key invalid lag rahi hai.' });
+      return next(
+        new AppError(500, 'OpenAI auth failed. API key invalid lag rahi hai.')
+      );
     }
     if (status === 429) {
       const contentHash = hashDocumentContent(extractedText);
@@ -362,12 +365,12 @@ const summarizeFile = async (req, res) => {
         fallback: true
       });
     }
-    res.status(500).json({ message: 'Server error!', error: err.message });
+    next(err);
   }
 };
 
 // Plain text summarize
-const summarizeText = async (req, res) => {
+const summarizeText = async (req, res, next) => {
   let text = '';
   let safeFormat = 'bullets';
 
@@ -376,7 +379,7 @@ const summarizeText = async (req, res) => {
     const format = req.body.format;
 
     if (!bodyText || typeof bodyText !== 'string' || !bodyText.trim()) {
-      return res.status(400).json({ message: 'Text bhejo!' });
+      return next(new AppError(400, 'Text bhejo!'));
     }
 
     text = bodyText.trim();
@@ -410,7 +413,9 @@ const summarizeText = async (req, res) => {
   } catch (err) {
     const status = err.status || err.statusCode;
     if (status === 401) {
-      return res.status(500).json({ message: 'OpenAI auth failed. API key invalid lag rahi hai.' });
+      return next(
+        new AppError(500, 'OpenAI auth failed. API key invalid lag rahi hai.')
+      );
     }
     if (status === 429) {
       const contentHash = hashDocumentContent(text);
@@ -436,7 +441,7 @@ const summarizeText = async (req, res) => {
         fallback: true
       });
     }
-    res.status(500).json({ message: 'Server error!', error: err.message });
+    next(err);
   }
 };
 

@@ -1,18 +1,18 @@
 const Summary = require('../models/Summary');
 
 // Saari summaries fetch karo
-const getHistory = async (req, res) => {
+const getHistory = async (req, res, next) => {
   try {
     const summaries = await Summary.find({ userId: req.user.id })
       .sort({ createdAt: -1 });
     res.json(summaries);
   } catch (err) {
-    res.status(500).json({ message: 'Server error!', error: err.message });
+    next(err);
   }
 };
 
 // Ek summary fetch karo
-const getSummary = async (req, res) => {
+const getSummary = async (req, res, next) => {
   try {
     const summary = await Summary.findOne({
       _id: req.params.id,
@@ -39,7 +39,7 @@ const deleteSummary = async (req, res) => {
     }
     res.json({ message: 'Summary deleted!' });
   } catch (err) {
-    res.status(500).json({ message: 'Server error!', error: err.message });
+    next(err);
   }
 };
 
