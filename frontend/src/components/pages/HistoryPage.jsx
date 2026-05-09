@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { SummaryCard } from "../SummaryCard";
+import { DocumentQAPanel } from "../DocumentQAPanel";
 import { History } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,18 +58,22 @@ export function HistoryPage() {
           <p className="text-sm mt-1">Upload a document to get started.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {summaries.map((s) => (
-            <SummaryCard
-              key={s._id}
-              filename={s.fileName}
-              date={new Date(s.createdAt).toLocaleDateString("en-US", {
-                year: "numeric", month: "short", day: "numeric",
-              })}
-              format={s.summaryFormat}
-              summary={s.summaryText}
-              onDelete={() => handleDelete(s._id)}
-            />
+            <div key={s._id} className="space-y-4">
+              <SummaryCard
+                filename={s.fileName}
+                date={new Date(s.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric", month: "short", day: "numeric",
+                })}
+                format={s.summaryFormat}
+                summary={s.summaryText}
+                onDelete={() => handleDelete(s._id)}
+              />
+              {s.contentHash ? (
+                <DocumentQAPanel contentHash={s.contentHash} />
+              ) : null}
+            </div>
           ))}
         </div>
       )}

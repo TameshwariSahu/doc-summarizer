@@ -26,6 +26,10 @@ const summarySchema = new mongoose.Schema({
   summaryText: {
     type: String,
     required: true
+  },
+  contentHash: {
+    type: String,
+    index: true
   }
 }, { timestamps: true });
 

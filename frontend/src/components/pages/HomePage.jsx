@@ -3,6 +3,7 @@ import axios from "axios";
 import { UploadBox } from "../UploadBox";
 import { FormatToggle } from "../FormatToggle";
 import { SummaryCard } from "../SummaryCard";
+import { DocumentQAPanel } from "../DocumentQAPanel";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,6 +37,7 @@ export function HomePage() {
         filename: selectedFile.name,
         summary: response.data.summary.summaryText,
         format: format,
+        contentHash: response.data.summary.contentHash,
         date: new Date().toLocaleDateString("en-US", {
           year: "numeric", month: "short", day: "numeric",
         }),
@@ -91,14 +93,19 @@ export function HomePage() {
         </div>
 
         {summaryResult && (
-          <div className="mt-8">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">Summary Result</h2>
-            <SummaryCard
-              filename={summaryResult.filename}
-              date={summaryResult.date}
-              format={summaryResult.format}
-              summary={summaryResult.summary}
-            />
+          <div className="mt-8 space-y-6">
+            <div>
+              <h2 className="mb-4 text-lg font-semibold text-foreground">Summary Result</h2>
+              <SummaryCard
+                filename={summaryResult.filename}
+                date={summaryResult.date}
+                format={summaryResult.format}
+                summary={summaryResult.summary}
+              />
+            </div>
+            {summaryResult.contentHash && (
+              <DocumentQAPanel contentHash={summaryResult.contentHash} disabled={isLoading} />
+            )}
           </div>
         )}
       </div>

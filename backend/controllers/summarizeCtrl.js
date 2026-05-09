@@ -2,6 +2,8 @@ const OpenAI = require('openai');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const Summary = require('../models/Summary');
+const StoredDocument = require('../models/StoredDocument');
+const { hashDocumentContent } = require('../utils/contentHash');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const ALLOWED_FORMATS = new Set(['bullets', 'paragraph', 'json']);
@@ -305,6 +307,13 @@ const summarizeFile = async (req, res) => {
       return res.status(400).json({ message: 'Document mein text nahi mila!' });
     }
 
+    const contentHash = hashDocumentContent(extractedText);
+    await StoredDocument.findOneAndUpdate(
+      { contentHash },
+      { $setOnInsert: { extractedText, fileName: req.file.originalname } },
+      { upsert: true }
+    );
+
     // AI se summary lo
     const summaryText = await getSummaryFromAI(extractedText, format);
 
@@ -315,7 +324,8 @@ const summarizeFile = async (req, res) => {
       fileType,
       originalLength: extractedText.split(' ').length,
       summaryFormat: format,
-      summaryText
+      summaryText,
+      contentHash
     });
 
     res.json({
@@ -329,6 +339,12 @@ const summarizeFile = async (req, res) => {
       return res.status(500).json({ message: 'OpenAI auth failed. API key invalid lag rahi hai.' });
     }
     if (status === 429) {
+      const contentHash = hashDocumentContent(extractedText);
+      await StoredDocument.findOneAndUpdate(
+        { contentHash },
+        { $setOnInsert: { extractedText, fileName: req.file.originalname } },
+        { upsert: true }
+      );
       const fallbackSummary = buildLocalFallbackSummary(extractedText, format);
       const summary = await Summary.create({
         userId: req.user.id,
@@ -336,7 +352,8 @@ const summarizeFile = async (req, res) => {
         fileType,
         originalLength: extractedText.split(' ').length,
         summaryFormat: format,
-        summaryText: fallbackSummary
+        summaryText: fallbackSummary,
+        contentHash
       });
 
       return res.json({
@@ -365,6 +382,14 @@ const summarizeText = async (req, res) => {
     text = bodyText.trim();
     const requestedFormat = format || 'bullets';
     safeFormat = ALLOWED_FORMATS.has(requestedFormat) ? requestedFormat : 'bullets';
+
+    const contentHash = hashDocumentContent(text);
+    await StoredDocument.findOneAndUpdate(
+      { contentHash },
+      { $setOnInsert: { extractedText: text, fileName: 'Plain Text' } },
+      { upsert: true }
+    );
+
     const summaryText = await getSummaryFromAI(text, safeFormat);
 
     const summary = await Summary.create({
@@ -373,7 +398,8 @@ const summarizeText = async (req, res) => {
       fileType: 'text',
       originalLength: text.split(/\s+/).length,
       summaryFormat: safeFormat,
-      summaryText
+      summaryText,
+      contentHash
     });
 
     res.json({
@@ -387,6 +413,12 @@ const summarizeText = async (req, res) => {
       return res.status(500).json({ message: 'OpenAI auth failed. API key invalid lag rahi hai.' });
     }
     if (status === 429) {
+      const contentHash = hashDocumentContent(text);
+      await StoredDocument.findOneAndUpdate(
+        { contentHash },
+        { $setOnInsert: { extractedText: text, fileName: 'Plain Text' } },
+        { upsert: true }
+      );
       const fallbackSummary = buildLocalFallbackSummary(text, safeFormat);
       const summary = await Summary.create({
         userId: req.user.id,
@@ -394,7 +426,8 @@ const summarizeText = async (req, res) => {
         fileType: 'text',
         originalLength: text.split(/\s+/).length,
         summaryFormat: safeFormat,
-        summaryText: fallbackSummary
+        summaryText: fallbackSummary,
+        contentHash
       });
 
       return res.json({
