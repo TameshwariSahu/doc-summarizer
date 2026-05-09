@@ -1,7 +1,6 @@
 const formats = [
   { value: "bullets", label: "Bullet Points" },
-  { value: "paragraph", label: "Paragraph" },
-  { value: "json", label: "JSON" },
+  { value: "paragraph", label: "Paragraph" }
 ];
 
 export function FormatToggle({ value, onChange, disabled }) {
