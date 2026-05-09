@@ -7,6 +7,7 @@ import { RegisterPage } from "./components/pages/RegisterPage";
 import { HomePage } from "./components/pages/HomePage";
 import { HistoryPage } from "./components/pages/HistoryPage";
 import { Toaster } from "sonner";
+import { NotFoundPage } from "./components/pages/NotFoundPage";
 
 function AuthRedirect({ children }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -24,7 +25,7 @@ function AppRoutes() {
         <Route path="/register" element={<AuthRedirect><RegisterPage /></AuthRedirect>} />
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </div>
   );

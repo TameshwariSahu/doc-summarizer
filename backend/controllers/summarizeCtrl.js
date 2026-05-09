@@ -26,7 +26,6 @@ const chunkText = (text, chunkSize = 3000) => {
   return chunks;
 };
 
-// Prompt builder — format ke hisaab se
 const buildPrompt = (text, format) => {
   const formats = {
     bullets: `Summarize the following document in 5-7 clear bullet points. Each bullet should be one sentence. Focus on key information only.
