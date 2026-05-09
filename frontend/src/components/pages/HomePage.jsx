@@ -4,20 +4,32 @@ import { UploadBox } from "../UploadBox";
 import { FormatToggle } from "../FormatToggle";
 import { SummaryCard } from "../SummaryCard";
 import { DocumentQAPanel } from "../DocumentQAPanel";
-import { Sparkles } from "lucide-react";
+import { Sparkles, FileText, AlignLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const API_URL = "http://localhost:5000/api";
 
 export function HomePage() {
+  const [activeTab, setActiveTab] = useState("file");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [pastedText, setPastedText] = useState("");
   const [format, setFormat] = useState("bullets");
   const [isLoading, setIsLoading] = useState(false);
   const [summaryResult, setSummaryResult] = useState(null);
 
+  const handleClear = () => {
+    setSelectedFile(null);
+    setPastedText("");
+    setSummaryResult(null);
+  };
+
   const handleUpload = async () => {
-    if (!selectedFile) {
+    if (activeTab === "file" && !selectedFile) {
       toast.error("Please select a file first!");
+      return;
+    }
+    if (activeTab === "text" && !pastedText.trim()) {
+      toast.error("Please paste some text first!");
       return;
     }
 
@@ -25,16 +37,24 @@ export function HomePage() {
     setSummaryResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-      formData.append("format", format);
+      let response;
 
-      const response = await axios.post(`${API_URL}/summarize/upload`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      if (activeTab === "file") {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("format", format);
+        response = await axios.post(`${API_URL}/summarize/upload`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        response = await axios.post(`${API_URL}/summarize/text`, {
+          text: pastedText,
+          format,
+        });
+      }
 
       setSummaryResult({
-        filename: selectedFile.name,
+        filename: activeTab === "file" ? selectedFile.name : "Pasted Text",
         summary: response.data.summary.summaryText,
         format: format,
         contentHash: response.data.summary.contentHash,
@@ -58,24 +78,82 @@ export function HomePage() {
           Document Summarizer
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Upload your PDF or DOCX file and get an AI-powered summary instantly
+          Upload a file or paste text to get an AI-powered summary instantly
         </p>
       </div>
 
       <div className="space-y-6">
-        <UploadBox
-          onFileSelect={setSelectedFile}
-          selectedFile={selectedFile}
-          onClear={() => { setSelectedFile(null); setSummaryResult(null); }}
-          disabled={isLoading}
-        />
 
+        {/* Tab switcher */}
+        <div className="flex gap-2 p-1 bg-secondary rounded-lg w-fit">
+          <button
+            onClick={() => { setActiveTab("file"); handleClear(); }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+              ${activeTab === "file"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            <FileText className="h-4 w-4" />
+            Upload File
+          </button>
+          <button
+            onClick={() => { setActiveTab("text"); handleClear(); }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+              ${activeTab === "text"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            <AlignLeft className="h-4 w-4" />
+            Paste Text
+          </button>
+        </div>
+
+        {/* File upload tab */}
+        {activeTab === "file" && (
+          <UploadBox
+            onFileSelect={setSelectedFile}
+            selectedFile={selectedFile}
+            onClear={handleClear}
+            disabled={isLoading}
+          />
+        )}
+
+        {/* Text paste tab */}
+        {activeTab === "text" && (
+          <div className="relative">
+            <textarea
+              value={pastedText}
+              onChange={(e) => setPastedText(e.target.value)}
+              disabled={isLoading}
+              placeholder="Paste your text here — article, paragraph, notes, anything..."
+              rows={10}
+              className="w-full rounded-xl border-2 border-dashed border-border bg-secondary text-foreground placeholder:text-muted-foreground p-4 text-sm leading-relaxed resize-none focus:outline-none focus:border-primary transition-colors disabled:opacity-50"
+            />
+            {pastedText && (
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-xs text-muted-foreground">
+                  {pastedText.trim().split(/\s+/).length} words
+                </span>
+                <button
+                  onClick={handleClear}
+                  className="text-xs text-muted-foreground hover:text-red-400 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Format + Summarize button */}
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
           <FormatToggle value={format} onChange={setFormat} disabled={isLoading} />
 
           <button
             onClick={handleUpload}
-            disabled={!selectedFile || isLoading}
+            disabled={isLoading || (activeTab === "file" ? !selectedFile : !pastedText.trim())}
             className="flex items-center gap-2 px-6 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
           >
             {isLoading ? (
@@ -92,10 +170,13 @@ export function HomePage() {
           </button>
         </div>
 
+        {/* Summary result */}
         {summaryResult && (
           <div className="mt-8 space-y-6">
             <div>
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Summary Result</h2>
+              <h2 className="mb-4 text-lg font-semibold text-foreground">
+                Summary Result
+              </h2>
               <SummaryCard
                 filename={summaryResult.filename}
                 date={summaryResult.date}
@@ -104,7 +185,10 @@ export function HomePage() {
               />
             </div>
             {summaryResult.contentHash && (
-              <DocumentQAPanel contentHash={summaryResult.contentHash} disabled={isLoading} />
+              <DocumentQAPanel
+                contentHash={summaryResult.contentHash}
+                disabled={isLoading}
+              />
             )}
           </div>
         )}
