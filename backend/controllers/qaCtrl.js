@@ -38,32 +38,21 @@ const localAnswerFromDoc = (documentText, question) => {
   return `From the document (offline lookup): ${top.join(' ')}`;
 };
 
-const answerWithOpenAI = async (documentText, question) => {
-  if (!process.env.OPENAI_API_KEY) {
-    return localAnswerFromDoc(documentText, question);
+const axios = require('axios');
+
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+
+const answerWithRAG = async (contentHash, question, userId) => {
+  try {
+    const response = await axios.post(`${AI_SERVICE_URL}/qa`, {
+      content_hash: contentHash,
+      question: question,
+      user_id: userId
+    });
+    return { answer: response.data.answer, fallback: false };
+  } catch (err) {
+    return null;
   }
-  const maxCtx = 14000;
-  const ctx =
-    documentText.length > maxCtx
-      ? `${documentText.slice(0, maxCtx)}\n\n[Document truncated for length.]`
-      : documentText;
-  const model = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
-  const response = await openai.chat.completions.create({
-    model,
-    messages: [
-      {
-        role: 'system',
-        content:
-          'You answer using ONLY the provided document. If the answer is not supported by the document, say briefly that it is not stated there. Be concise.'
-      },
-      {
-        role: 'user',
-        content: `Document:\n${ctx}\n\nQuestion: ${question}\n\nAnswer:`
-      }
-    ],
-    max_tokens: 500
-  });
-  return response.choices[0].message.content;
 };
 
 const assertUserHasDocumentAccess = async (userId, contentHash) => {
@@ -113,37 +102,59 @@ const askQuestion = async (req, res, next) => {
   try {
     const { contentHash, question } = req.body;
     if (!contentHash || typeof question !== 'string' || !question.trim()) {
-      return next(new AppError(400, 'contentHash aur question bhejo.'));
+      return next(new AppError(400, 'contentHash and question are required.'));
     }
+
     const allowed = await assertUserHasDocumentAccess(req.user.id, contentHash);
     if (!allowed) {
-      return next(
-        new AppError(403, 'Sawaal poochhne ke liye is document ko pehle summarize karna hoga.')
-      );
+      return next(new AppError(403, 'Please summarize this document first.'));
     }
+
     const stored = await StoredDocument.findOne({ contentHash });
     if (!stored) {
-      return next(
-        new AppError(404, 'Document text nahi mila. Dobara upload karke try karo.')
-      );
+      return next(new AppError(404, 'Document not found. Please re-upload.'));
     }
 
     const qDisplay = question.trim();
     const qKey = normalizeQuestionKey(qDisplay);
     if (!qKey) {
-      return next(new AppError(400, 'Question sahi se likho.'));
+      return next(new AppError(400, 'Please write a valid question.'));
     }
 
     let answer;
     let fallback = false;
-    try {
-      answer = await answerWithOpenAI(stored.extractedText, qDisplay);
-    } catch (err) {
-      const status = err.status || err.statusCode;
-      if (status === 429 || status === 401) {
-        answer = localAnswerFromDoc(stored.extractedText, qDisplay);
-        fallback = true;
-      } else {
+
+    // Pehle RAG try karo — Vector DB se
+    const ragResult = await answerWithRAG(contentHash, qDisplay, req.user.id);
+
+    if (ragResult) {
+      answer = ragResult.answer;
+    } else {
+      // Fallback — direct document text se
+      try {
+        const maxCtx = 14000;
+        const ctx = stored.extractedText.length > maxCtx
+          ? `${stored.extractedText.slice(0, maxCtx)}\n\n[Document truncated.]`
+          : stored.extractedText;
+
+        const response = await openai.chat.completions.create({
+          model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: 'Answer using ONLY the provided document. Be concise and accurate.'
+            },
+            {
+              role: 'user',
+              content: `Document:\n${ctx}\n\nQuestion: ${qDisplay}\n\nAnswer:`
+            }
+          ],
+          max_tokens: 500,
+          temperature: 0.3
+        });
+
+        answer = response.choices[0].message.content;
+      } catch (err) {
         answer = localAnswerFromDoc(stored.extractedText, qDisplay);
         fallback = true;
       }
@@ -158,11 +169,12 @@ const askQuestion = async (req, res, next) => {
     });
 
     res.json({
-      message: fallback ? 'Jawaab offline document lookup se diya gaya.' : 'Jawaab tayyar hai.',
+      message: fallback ? 'Answer from offline lookup.' : 'Answer ready!',
       question: qDisplay,
       answer,
       fallback
     });
+
   } catch (err) {
     next(err);
   }
