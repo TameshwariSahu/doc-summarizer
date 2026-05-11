@@ -67,6 +67,8 @@ const toCompleteSentence = (sentence) => {
   return `${trimmed}.`;
 };
 
+
+
 /** Light rewrite so bullets are not verbatim copy-paste of one long clause */
 const gentleRephraseForSummary = (s) => {
   let t = s.trim();
@@ -231,6 +233,25 @@ const buildLocalFallbackSummary = (text, format = 'bullets') => {
 
 // OpenAI se summary lena
 const getSummaryFromAI = async (text, format) => {
+  const getSummaryFromAI = async (text, format) => {
+  console.log("=== OpenAI API Key exists:", !!process.env.OPENAI_API_KEY);
+  console.log("=== Calling OpenAI...");
+  
+  try {
+    const response = await openai.chat.completions.create({
+      // ... existing code
+    });
+    
+    console.log("=== OpenAI Response:", response.choices[0].message.content.slice(0, 200));
+    return response.choices[0].message.content;
+    
+  } catch (err) {
+    console.log("=== OpenAI ERROR:", err.status, err.message);
+    throw err;
+  }
+};
+console.log("=== OpenAI API Key exists:", !!process.env.OPENAI_API_KEY);
+  console.log("=== Calling OpenAI...");
   if (!process.env.OPENAI_API_KEY) {
     throw new Error('OPENAI_API_KEY missing hai. Backend .env check karo.');
   }
