@@ -28,27 +28,15 @@ const chunkText = (text, chunkSize = 3000) => {
 
 const buildPrompt = (text, format) => {
   const formats = {
-    bullets: `Summarize the following document in 5-7 clear bullet points. Each bullet should be one sentence. Focus on key information only.
+    bullets: `You are an expert summarizer. Analyze the following text and provide key insights, meanings, and important concepts in 5-7 bullet points. Do NOT copy the text — explain what it means in simple terms.
 
-Document:
+Text:
 ${text}`,
 
-    paragraph: `Summarize the following document in 2-3 concise paragraphs. Be clear and professional.
+    paragraph: `You are an expert summarizer. Analyze the following text and explain its core meaning, context, and significance in 2-3 paragraphs. Do NOT copy the text — interpret and explain it.
 
-Document:
+Text:
 ${text}`,
-
-    json: `Summarize the following document and return ONLY a valid JSON object with this structure:
-{
-  "title": "document topic",
-  "summary": "2-3 sentence overview",
-  "key_points": ["point1", "point2", "point3"],
-  "action_items": ["item1", "item2"]
-}
-Return ONLY JSON, no extra text.
-
-Document:
-${text}`
   };
 
   return formats[format] || formats.bullets;
