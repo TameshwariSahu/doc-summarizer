@@ -28,15 +28,31 @@ const chunkText = (text, chunkSize = 3000) => {
 
 const buildPrompt = (text, format) => {
   const formats = {
-    bullets: `You are an expert summarizer. Analyze the following text and provide key insights, meanings, and important concepts in 5-7 bullet points. Do NOT copy the text — explain what it means in simple terms.
+    bullets: `You are an expert analyst. Read the following text carefully and provide a meaningful summary in 5-6 bullet points.
+
+Rules:
+- Do NOT copy sentences from the text
+- Explain the MEANING and SIGNIFICANCE in your own words
+- Each bullet should give a new insight
+- Be concise but informative
 
 Text:
-${text}`,
+${text}
 
-    paragraph: `You are an expert summarizer. Analyze the following text and explain its core meaning, context, and significance in 2-3 paragraphs. Do NOT copy the text — interpret and explain it.
+Summary (in your own words):`,
+
+    paragraph: `You are an expert analyst. Read the following text carefully and write a meaningful summary in 2-3 paragraphs.
+
+Rules:
+- Do NOT copy sentences from the text
+- Explain the MEANING and SIGNIFICANCE in your own words
+- Focus on the core message and key concepts
+- Be clear and professional
 
 Text:
-${text}`,
+${text}
+
+Summary (in your own words):`,
   };
 
   return formats[format] || formats.bullets;
@@ -239,11 +255,10 @@ const getSummaryFromAI = async (text, format) => {
       content: buildPrompt(finalText, format)
     }
   ],
-        max_tokens: 1000,
-        temperature: 0.3,
-        top_p: 1,
-        frequency_penalty: 0.3,
-        presence_penalty: 0
+          max_tokens: 1000,
+        temperature: 0.5,
+        frequency_penalty: 0.5,
+        presence_penalty: 0.3
       });
       chunkSummaries.push(res.choices[0].message.content);
     }
