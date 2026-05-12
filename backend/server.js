@@ -4,6 +4,10 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
+const { generalLimiter, authLimiter, summarizeLimiter } = require('./middleware/rateLimiter');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
 
 dotenv.config();
 connectDB();
@@ -18,6 +22,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/summarize', require('./routes/summarize'));
 app.use('/api/history', require('./routes/history'));
 app.use('/api/qa', require('./routes/qa'));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/', (req, res) => {
   res.json({ message: 'Doc Summarizer API running!' });
