@@ -4,8 +4,10 @@ const StoredDocument = require('../models/StoredDocument');
 const Summary = require('../models/Summary');
 const AppError = require('../utils/AppError');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
+const openai = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1"
+});
 const normalizeQuestionKey = (q) =>
   q
     .trim()
@@ -138,7 +140,7 @@ const askQuestion = async (req, res, next) => {
           : stored.extractedText;
 
         const response = await openai.chat.completions.create({
-          model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+           model: 'llama3-8b-8192',
           messages: [
             {
               role: 'system',
