@@ -39,7 +39,8 @@ Rules:
 - Maintain complete meaning and context
 - Write coherent and complete bullet points
 - Avoid incomplete sentences
-
+- Do not introduce concepts that are not explicitly present in the text
+- Keep each bullet under 2 sentences
 Text:
 ${text}
 
