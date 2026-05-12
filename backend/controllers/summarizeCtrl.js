@@ -7,7 +7,10 @@ const StoredDocument = require('../models/StoredDocument');
 const { hashDocumentContent } = require('../utils/contentHash');
 const AppError = require('../utils/AppError');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1"
+});
 const ALLOWED_FORMATS = new Set(['bullets', 'paragraph']);
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
@@ -67,8 +70,12 @@ const buildLocalFallbackSummary = (text) => {
 };
 
 const getSummaryFromAI = async (text, format) => {
-  console.log("=== OpenAI API Key exists:", !!process.env.OPENAI_API_KEY);
-  console.log("=== Calling OpenAI...");
+ console.log("=== Groq API Key exists:", !!process.env.GROQ_API_KEY);
+console.log("=== Calling Groq...");
+
+if (!process.env.GROQ_API_KEY) {
+  throw new Error('GROQ_API_KEY missing.');
+}
 
   if (!process.env.OPENAI_API_KEY) {
     throw new Error('OPENAI_API_KEY missing.');
@@ -81,7 +88,7 @@ const getSummaryFromAI = async (text, format) => {
     const chunkSummaries = [];
     for (let chunk of chunks) {
       const res = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'llama3-8b-8192',
         messages: [
           { role: 'system', content: 'Summarize this section briefly in 3-4 sentences in your own words.' },
           { role: 'user', content: chunk }
@@ -95,7 +102,7 @@ const getSummaryFromAI = async (text, format) => {
   }
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-3.5-turbo',
+   model: 'llama3-8b-8192',
     messages: [
       {
         role: 'system',
