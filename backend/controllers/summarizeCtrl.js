@@ -34,13 +34,13 @@ const formats = {
   bullets: `Summarize the following text into 5-6 meaningful bullet points.
 
 Rules:
-- Preserve important spiritual and philosophical concepts
-- Keep important terms like Brahman, Paramatma, Bhagavan, Atma, Karma, etc.
-- Maintain complete meaning and context
-- Write coherent and complete bullet points
+- Preserve important concepts, terminology, and context
+- Maintain the original meaning of the text
+- Write coherent and complete summaries
 - Avoid incomplete sentences
 - Do not introduce concepts that are not explicitly present in the text
-- Keep each bullet under 2 sentences
+- Keep each bullet concise and under 2 sentences
+- Focus only on the key ideas present in the input
 Text:
 ${text}
 
