@@ -44,7 +44,7 @@ Rules:
 Text:
 ${text}
 
-Summary (in your own words):`,
+Accurate Summary:`,
 
     paragraph: `You are an expert analyst. Read the following text and write a meaningful summary in 2-3 paragraphs.
 
@@ -107,8 +107,15 @@ if (!process.env.GROQ_API_KEY) {
     messages: [
       {
         role: 'system',
-        content: 'You are an expert document summarizer. Preserve meaning, context, and important terminology while summarizing.'
-      },
+     content: `
+        You are a precise document summarizer.
+
+        Rules:
+        - Preserve the original meaning and context
+        - Do not add interpretations, assumptions, or extra philosophical concepts
+        - Only include information explicitly present in the text
+        - Keep summaries concise, coherent, and factually grounded
+        ` },
       {
         role: 'user',
         content: buildPrompt(finalText, format)
