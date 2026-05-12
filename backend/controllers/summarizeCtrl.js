@@ -30,14 +30,15 @@ const chunkText = (text, chunkSize = 3000) => {
 };
 
 const buildPrompt = (text, format) => {
-  const formats = {
-    bullets: `You are an expert analyst. Read the following text and provide a meaningful summary in 5-6 bullet points.
+const formats = {
+  bullets: `Summarize the following text into 5-6 meaningful bullet points.
 
 Rules:
-- Do NOT copy sentences from the text
-- Explain the MEANING and SIGNIFICANCE in your own words
-- Each bullet should give a new insight
-- Be concise but informative
+- Preserve important spiritual and philosophical concepts
+- Keep important terms like Brahman, Paramatma, Bhagavan, Atma, Karma, etc.
+- Maintain complete meaning and context
+- Write coherent and complete bullet points
+- Avoid incomplete sentences
 
 Text:
 ${text}
@@ -47,7 +48,6 @@ Summary (in your own words):`,
     paragraph: `You are an expert analyst. Read the following text and write a meaningful summary in 2-3 paragraphs.
 
 Rules:
-- Do NOT copy sentences from the text
 - Explain the MEANING and SIGNIFICANCE in your own words
 - Focus on the core message and key concepts
 - Be clear and professional
@@ -77,9 +77,9 @@ if (!process.env.GROQ_API_KEY) {
   throw new Error('GROQ_API_KEY missing.');
 }
 
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY missing.');
-  }
+ if (!process.env.GROQ_API_KEY) {
+  throw new Error('GROQ_API_KEY missing.');
+}
 
   const chunks = chunkText(text);
   let finalText = text;
@@ -94,7 +94,7 @@ if (!process.env.GROQ_API_KEY) {
           { role: 'user', content: chunk }
         ],
         max_tokens: 300,
-        temperature: 0.5
+        temperature: 0.2
       });
       chunkSummaries.push(res.choices[0].message.content);
     }
@@ -102,11 +102,11 @@ if (!process.env.GROQ_API_KEY) {
   }
 
   const response = await openai.chat.completions.create({
-   model: 'llama3-8b-8192',
+   model: 'llama-3.3-70b-versatile',
     messages: [
       {
         role: 'system',
-        content: 'You are an expert document analyst. Always explain meaning in your own words. Never copy text verbatim.'
+        content: 'You are an expert document summarizer. Preserve meaning, context, and important terminology while summarizing.'
       },
       {
         role: 'user',
@@ -114,9 +114,9 @@ if (!process.env.GROQ_API_KEY) {
       }
     ],
     max_tokens: 1000,
-    temperature: 0.5,
-    frequency_penalty: 0.5,
-    presence_penalty: 0.3
+    temperature: 0.2,
+    // frequency_penalty: 0.5,
+    // presence_penalty: 0.3
   });
 
   console.log("=== OpenAI Response received!");
