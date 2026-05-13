@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { getHistory, getSummary, deleteSummary } = require('../controllers/historyCtrl');
+const { getHistory, getSummary, deleteSummary, getSummaryPublic } = require('../controllers/historyCtrl');
 const auth = require('../middleware/auth');
 const asyncHandler = require('../middleware/asyncHandler');
 
+router.get('/share/:id', asyncHandler(getSummaryPublic));
 router.get('/', auth, asyncHandler(getHistory));
 router.get('/:id', auth, asyncHandler(getSummary));
 router.delete('/:id', auth, asyncHandler(deleteSummary));
-router.get('/share/:id', getSummaryPublic);
+
 
 /**
  * @swagger
