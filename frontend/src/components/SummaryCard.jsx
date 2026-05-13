@@ -12,17 +12,18 @@ export function SummaryCard({ id, filename, date, format, summary, onDelete }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleShare = async () => {
-    if (!id) {
-      toast.error("Save the summary first to share!");
-      return;
-    }
-    const shareUrl = `${window.location.origin}/share/${id}`;
-    await navigator.clipboard.writeText(shareUrl);
-    setShareCopied(true);
-    toast.success("Share link copied!");
-    setTimeout(() => setShareCopied(false), 2000);
-  };
+ const handleShare = async () => {
+  console.log("id:", id); 
+  if (!id) {
+    toast.error("Save the summary first to share!");
+    return;
+  }
+  const shareUrl = `${window.location.origin}/share/${id}`;
+  await navigator.clipboard.writeText(shareUrl);
+  setShareCopied(true);
+  toast.success("Share link copied!");
+  setTimeout(() => setShareCopied(false), 2000);
+};
 
   const formatLabel = {
     bullets: "Bullet Points",

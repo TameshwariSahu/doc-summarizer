@@ -21,19 +21,19 @@
   }
 
   .light {
-    --background: 0 0% 98%;
-    --foreground: 224 71% 4%;
-    --primary: 162 100% 35%;
+    --background: 0 0% 97%;
+    --foreground: 222 47% 8%;
+    --primary: 162 100% 32%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 93%;
-    --secondary-foreground: 224 71% 4%;
-    --muted: 220 14% 93%;
-    --muted-foreground: 215 16% 40%;
+    --secondary: 220 14% 90%;
+    --secondary-foreground: 222 47% 8%;
+    --muted: 220 14% 90%;
+    --muted-foreground: 215 16% 25%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
-    --border: 220 13% 85%;
-    --input: 220 13% 85%;
-    --ring: 162 100% 35%;
+    --card-foreground: 222 47% 8%;
+    --border: 220 13% 80%;
+    --input: 220 13% 80%;
+    --ring: 162 100% 32%;
   }
 
   * { border-color: hsl(var(--border)); }

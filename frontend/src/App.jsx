@@ -20,7 +20,7 @@ function AuthRedirect({ children }) {
 
 function AppRoutes() {
   return (
-    <div className="min-h-screen bg-background">
+<div className="min-h-screen bg-background ">
       <Navbar />
       <Routes>
         <Route path="/login" element={<AuthRedirect><LoginPage /></AuthRedirect>} />

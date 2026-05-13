@@ -6,7 +6,6 @@ const formats = [
 export function FormatToggle({ value, onChange, disabled }) {
   return (
     <div>
-      <p className="text-sm font-medium text-foreground mb-2">Summary Format</p>
       <div className="flex gap-2 flex-wrap">
         {formats.map((f) => (
           <button

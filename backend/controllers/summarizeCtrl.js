@@ -32,22 +32,30 @@ const chunkText = (text, chunkSize = 3000) => {
 
 const buildPrompt = (text, format, language = 'English') => {
   const formats = {
-    bullets: `Summarize the following text into 5-6 meaningful bullet points.
+bullets: `Summarize the following text into 5-6 bullet points.
 
 Rules:
-- Preserve important concepts, terminology, and context
-- Maintain the original meaning of the text
-- Write coherent and complete summaries
-- Avoid incomplete sentences
-- Do not introduce concepts that are not explicitly present in the text
-- Keep each bullet concise and under 2 sentences
-- Focus only on the key ideas present in the input
+- Each bullet should be 1 sentence, around 20-30 words
+- Be specific — mention actual examples from the text (e.g. data entry, reskilling)
+- Do not be too vague or too long
+- Capture the key idea WITH enough context to make sense
+- No filler words or repetition
 - Write the summary in ${language} language
+
+Example of a GOOD bullet:
+- AI will automate routine tasks like data entry and customer service, displacing some jobs but creating new high-value roles.
+
+Example of a BAD bullet (too short):
+- AI automates tasks.
+
+Example of a BAD bullet (too long):
+- AI is expected to automate routine cognitive tasks which will lead to job displacement in roles like data entry, customer service, and content generation, however it does not replace the need for humans.
 
 Text:
 ${text}
 
-Accurate Summary:`,
+Balanced Summary:`,
+
 
     paragraph: `You are an expert analyst. Read the following text and write a meaningful summary in 2-3 paragraphs.
 

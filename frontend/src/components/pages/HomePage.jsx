@@ -45,7 +45,7 @@ export function HomePage() {
         const formData = new FormData();
         formData.append("file", selectedFile);
         formData.append("format", format);
-        formData.append("language", language); // ✅ moved inside handleUpload
+        formData.append("language", language); 
         response = await axios.post(`${API_URL}/summarize/upload`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -55,8 +55,9 @@ export function HomePage() {
           format,
           language,
         });
+        
       }
-
+console.log("Full response:", response.data);
       setSummaryResult({
         id: response.data.summary._id,
         filename: activeTab === "file" ? selectedFile.name : "Pasted Text",

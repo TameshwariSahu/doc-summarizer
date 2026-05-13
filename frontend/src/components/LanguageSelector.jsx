@@ -13,7 +13,6 @@ const languages = [
 export function LanguageSelector({ value, onChange, disabled }) {
   return (
     <div>
-      <p className="text-sm font-medium text-foreground mb-2">Summary Language</p>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
