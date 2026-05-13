@@ -11,6 +11,7 @@ const openai = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
   baseURL: "https://api.groq.com/openai/v1"
 });
+
 const ALLOWED_FORMATS = new Set(['bullets', 'paragraph']);
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
@@ -30,8 +31,8 @@ const chunkText = (text, chunkSize = 3000) => {
 };
 
 const buildPrompt = (text, format, language = 'English') => {
-const formats = {
-  bullets: `Summarize the following text into 5-6 meaningful bullet points.
+  const formats = {
+    bullets: `Summarize the following text into 5-6 meaningful bullet points.
 
 Rules:
 - Preserve important concepts, terminology, and context
@@ -42,6 +43,7 @@ Rules:
 - Keep each bullet concise and under 2 sentences
 - Focus only on the key ideas present in the input
 - Write the summary in ${language} language
+
 Text:
 ${text}
 
@@ -72,16 +74,13 @@ const buildLocalFallbackSummary = (text) => {
 };
 
 const getSummaryFromAI = async (text, format, language = 'English') => {
- console.log("=== Groq API Key exists:", !!process.env.GROQ_API_KEY);
-console.log("=== Calling Groq...");
+  console.log("=== Groq API Key exists:", !!process.env.GROQ_API_KEY);
+  console.log("=== Calling Groq...");
 
-if (!process.env.GROQ_API_KEY) {
-  throw new Error('GROQ_API_KEY missing.');
-}
-
- if (!process.env.GROQ_API_KEY) {
-  throw new Error('GROQ_API_KEY missing.');
-}
+  // ✅ Only one check, not duplicated
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY missing.');
+  }
 
   const chunks = chunkText(text);
   let finalText = text;
@@ -104,11 +103,11 @@ if (!process.env.GROQ_API_KEY) {
   }
 
   const response = await openai.chat.completions.create({
-   model: 'llama-3.3-70b-versatile',
+    model: 'llama-3.3-70b-versatile',
     messages: [
       {
         role: 'system',
-     content: `
+        content: `
         You are a precise document summarizer.
 
         Rules:
@@ -116,7 +115,8 @@ if (!process.env.GROQ_API_KEY) {
         - Do not add interpretations, assumptions, or extra philosophical concepts
         - Only include information explicitly present in the text
         - Keep summaries concise, coherent, and factually grounded
-        ` },
+        `
+      },
       {
         role: 'user',
         content: buildPrompt(finalText, format, language)
@@ -124,27 +124,24 @@ if (!process.env.GROQ_API_KEY) {
     ],
     max_tokens: 1000,
     temperature: 0.2,
-    // frequency_penalty: 0.5,
-    // presence_penalty: 0.3
   });
 
   console.log("=== Groq Response received!");
   return response.choices[0].message.content;
 };
 
+// ✅ summarizeFile — fully fixed
 const summarizeFile = async (req, res, next) => {
-  const language = req.body.language || 'English';
-  const summaryText = await getSummaryFromAI(extractedText, format, language);
-
-  let extractedText = '';
-  let fileType = '';
-  let format = 'bullets';
-
   try {
+    // ✅ All variables declared FIRST before any use
+    let extractedText = '';
+    let fileType = '';
+
     if (!req.file) return next(new AppError(400, 'Please upload a file!'));
 
     const requestedFormat = req.body.format || 'bullets';
-    format = ALLOWED_FORMATS.has(requestedFormat) ? requestedFormat : 'bullets';
+    const format = ALLOWED_FORMATS.has(requestedFormat) ? requestedFormat : 'bullets';
+    const language = req.body.language || 'English'; // ✅ declared before use
 
     if (req.file.mimetype === 'application/pdf') {
       const pdfData = await pdfParse(req.file.buffer);
@@ -177,13 +174,14 @@ const summarizeFile = async (req, res, next) => {
       console.log('AI service store failed:', e.message);
     }
 
+    // ✅ Only ONE call to getSummaryFromAI, with language passed
     let summaryText;
     let fallback = false;
 
     try {
-      summaryText = await getSummaryFromAI(extractedText, format);
+      summaryText = await getSummaryFromAI(extractedText, format, language);
     } catch (err) {
-      console.log("=== OpenAI ERROR:", err.status, err.message);
+      console.log("=== Groq ERROR:", err.status, err.message);
       summaryText = buildLocalFallbackSummary(extractedText);
       fallback = true;
     }
@@ -194,12 +192,13 @@ const summarizeFile = async (req, res, next) => {
       fileType,
       originalLength: extractedText.split(' ').length,
       summaryFormat: format,
+      summaryLanguage: language,
       summaryText,
       contentHash
     });
 
     res.json({
-      message: fallback ? 'OpenAI failed. Local summary generated.' : 'Summary ready!',
+      message: fallback ? 'Groq failed. Local summary generated.' : 'Summary ready!',
       summary,
       fallback
     });
@@ -209,21 +208,19 @@ const summarizeFile = async (req, res, next) => {
   }
 };
 
+// ✅ summarizeText — fully fixed
 const summarizeText = async (req, res, next) => {
-const language = req.body.language || 'English';
-const summaryText = await getSummaryFromAI(text, safeFormat, language);
-  let text = '';
-  let safeFormat = 'bullets';
-
   try {
+    // ✅ All variables declared FIRST before any use
     const { text: bodyText, format } = req.body;
+    const language = req.body.language || 'English'; // ✅ declared before use
 
     if (!bodyText || typeof bodyText !== 'string' || !bodyText.trim()) {
       return next(new AppError(400, 'Please send text!'));
     }
 
-    text = bodyText.trim();
-    safeFormat = ALLOWED_FORMATS.has(format) ? format : 'bullets';
+    const text = bodyText.trim();
+    const safeFormat = ALLOWED_FORMATS.has(format) ? format : 'bullets';
 
     const contentHash = hashDocumentContent(text);
     await StoredDocument.findOneAndUpdate(
@@ -242,21 +239,23 @@ const summaryText = await getSummaryFromAI(text, safeFormat, language);
       console.log('AI service store failed:', e.message);
     }
 
+    // ✅ Only ONE call to getSummaryFromAI, with language passed
     let summaryText;
     let fallback = false;
 
     try {
-      summaryText = await getSummaryFromAI(text, safeFormat);
+      summaryText = await getSummaryFromAI(text, safeFormat, language);
     } catch (err) {
-      console.log("=== OpenAI ERROR:", err.status, err.message);
+      console.log("=== Groq ERROR:", err.status, err.message);
       summaryText = buildLocalFallbackSummary(text);
       fallback = true;
     }
 
+    // ✅ Removed req.file.originalname and fileType (don't exist in text route)
     const summary = await Summary.create({
       userId: req.user.id,
-      fileName: req.file.originalname,
-      fileType,
+      fileName: 'Plain Text',
+      fileType: 'text',
       originalLength: text.split(/\s+/).length,
       summaryFormat: safeFormat,
       summaryLanguage: language,
@@ -265,7 +264,7 @@ const summaryText = await getSummaryFromAI(text, safeFormat, language);
     });
 
     res.json({
-      message: fallback ? 'OpenAI failed. Local summary generated.' : 'Summary ready!',
+      message: fallback ? 'Groq failed. Local summary generated.' : 'Summary ready!',
       summary,
       fallback
     });
