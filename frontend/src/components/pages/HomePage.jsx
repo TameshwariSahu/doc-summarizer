@@ -7,8 +7,6 @@ import { DocumentQAPanel } from "../DocumentQAPanel";
 import { Sparkles, FileText, AlignLeft } from "lucide-react";
 import { toast } from "sonner";
 import { LanguageSelector } from "../LanguageSelector";
-const [language, setLanguage] = useState("English");
-formData.append("language", language);
 
 const API_URL = "http://localhost:5000/api";
 
@@ -19,6 +17,7 @@ export function HomePage() {
   const [format, setFormat] = useState("bullets");
   const [isLoading, setIsLoading] = useState(false);
   const [summaryResult, setSummaryResult] = useState(null);
+  const [language, setLanguage] = useState("English"); // ✅ moved inside component
 
   const handleClear = () => {
     setSelectedFile(null);
@@ -46,6 +45,7 @@ export function HomePage() {
         const formData = new FormData();
         formData.append("file", selectedFile);
         formData.append("format", format);
+        formData.append("language", language); // ✅ moved inside handleUpload
         response = await axios.post(`${API_URL}/summarize/upload`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -152,33 +152,12 @@ export function HomePage() {
           </div>
         )}
 
-        {/* Format + Summarize button */}
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
-          <FormatToggle value={format} onChange={setFormat} disabled={isLoading} />
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
-  <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-    <FormatToggle value={format} onChange={setFormat} disabled={isLoading} />
-    <LanguageSelector value={language} onChange={setLanguage} disabled={isLoading} />
-  </div>
-
-  <button
-    onClick={handleUpload}
-    disabled={isLoading || (activeTab === "file" ? !selectedFile : !pastedText.trim())}
-    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
-  >
-    {isLoading ? (
-      <>
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"></div>
-        Processing...
-      </>
-    ) : (
-      <>
-        <Sparkles className="h-4 w-4" />
-        Summarize
-      </>
-    )}
-  </button>
-</div>
+        {/* Format + Language + Summarize button — ✅ no duplicates */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <FormatToggle value={format} onChange={setFormat} disabled={isLoading} />
+            <LanguageSelector value={language} onChange={setLanguage} disabled={isLoading} />
+          </div>
 
           <button
             onClick={handleUpload}
