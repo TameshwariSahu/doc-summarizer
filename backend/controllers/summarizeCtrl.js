@@ -29,7 +29,7 @@ const chunkText = (text, chunkSize = 3000) => {
   return chunks;
 };
 
-const buildPrompt = (text, format) => {
+const buildPrompt = (text, format, language = 'English') => {
 const formats = {
   bullets: `Summarize the following text into 5-6 meaningful bullet points.
 
@@ -41,6 +41,7 @@ Rules:
 - Do not introduce concepts that are not explicitly present in the text
 - Keep each bullet concise and under 2 sentences
 - Focus only on the key ideas present in the input
+- Write the summary in ${language} language
 Text:
 ${text}
 
@@ -70,7 +71,7 @@ const buildLocalFallbackSummary = (text) => {
   return sentences.slice(0, 5).map((s) => `- ${s}`).join('\n');
 };
 
-const getSummaryFromAI = async (text, format) => {
+const getSummaryFromAI = async (text, format, language = 'English') => {
  console.log("=== Groq API Key exists:", !!process.env.GROQ_API_KEY);
 console.log("=== Calling Groq...");
 
@@ -118,7 +119,7 @@ if (!process.env.GROQ_API_KEY) {
         ` },
       {
         role: 'user',
-        content: buildPrompt(finalText, format)
+        content: buildPrompt(finalText, format, language)
       }
     ],
     max_tokens: 1000,
@@ -127,11 +128,14 @@ if (!process.env.GROQ_API_KEY) {
     // presence_penalty: 0.3
   });
 
-  console.log("=== OpenAI Response received!");
+  console.log("=== Groq Response received!");
   return response.choices[0].message.content;
 };
 
 const summarizeFile = async (req, res, next) => {
+  const language = req.body.language || 'English';
+  const summaryText = await getSummaryFromAI(extractedText, format, language);
+
   let extractedText = '';
   let fileType = '';
   let format = 'bullets';
@@ -206,6 +210,8 @@ const summarizeFile = async (req, res, next) => {
 };
 
 const summarizeText = async (req, res, next) => {
+const language = req.body.language || 'English';
+const summaryText = await getSummaryFromAI(text, safeFormat, language);
   let text = '';
   let safeFormat = 'bullets';
 
@@ -249,10 +255,11 @@ const summarizeText = async (req, res, next) => {
 
     const summary = await Summary.create({
       userId: req.user.id,
-      fileName: 'Plain Text',
-      fileType: 'text',
+      fileName: req.file.originalname,
+      fileType,
       originalLength: text.split(/\s+/).length,
       summaryFormat: safeFormat,
+      summaryLanguage: language,
       summaryText,
       contentHash
     });

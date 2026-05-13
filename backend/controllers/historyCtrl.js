@@ -1,6 +1,5 @@
 const Summary = require('../models/Summary');
 
-// Saari summaries fetch karo
 const getHistory = async (req, res, next) => {
   try {
     const summaries = await Summary.find({ userId: req.user.id })
@@ -11,7 +10,6 @@ const getHistory = async (req, res, next) => {
   }
 };
 
-// Ek summary fetch karo
 const getSummary = async (req, res, next) => {
   try {
     const summary = await Summary.findOne({
@@ -27,7 +25,6 @@ const getSummary = async (req, res, next) => {
   }
 };
 
-// Summary delete karo
 const deleteSummary = async (req, res) => {
   try {
     const summary = await Summary.findOneAndDelete({
@@ -42,5 +39,22 @@ const deleteSummary = async (req, res) => {
     next(err);
   }
 };
+
+const getSummaryPublic = async (req, res, next) => {
+  try {
+    const summary = await Summary.findById(req.params.id)
+      .select('fileName summaryText summaryFormat summaryLanguage createdAt');
+    
+    if (!summary) {
+      return next(new AppError(404, 'Summary not found!'));
+    }
+
+    res.json(summary);
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getHistory, getSummary, deleteSummary, getSummaryPublic };
 
 module.exports = { getHistory, getSummary, deleteSummary };

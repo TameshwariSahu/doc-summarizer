@@ -8,6 +8,8 @@ import { HomePage } from "./components/pages/HomePage";
 import { HistoryPage } from "./components/pages/HistoryPage";
 import { Toaster } from "sonner";
 import { NotFoundPage } from "./components/pages/NotFoundPage";
+import { ThemeProvider } from "./context/ThemeContext";
+import { SharePage } from "./components/pages/SharePage";
 
 function AuthRedirect({ children }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,6 +28,7 @@ function AppRoutes() {
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFoundPage />} />
+        <Route path="/share/:id" element={<SharePage />} />
       </Routes>
     </div>
   );
@@ -33,11 +36,13 @@ function AppRoutes() {
 
 export function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-        <Toaster position="top-right" richColors />
-      </AuthProvider>
+   <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

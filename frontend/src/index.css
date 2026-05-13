@@ -20,12 +20,26 @@
     --radius: 0.5rem;
   }
 
-  * {
-    border-color: hsl(var(--border));
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 224 71% 4%;
+    --primary: 162 100% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 224 71% 4%;
+    --muted: 220 14% 93%;
+    --muted-foreground: 215 16% 40%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+    --border: 220 13% 85%;
+    --input: 220 13% 85%;
+    --ring: 162 100% 35%;
   }
 
+  * { border-color: hsl(var(--border)); }
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    transition: background-color 0.3s, color 0.3s;
   }
 }

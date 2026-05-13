@@ -6,6 +6,9 @@ import { SummaryCard } from "../SummaryCard";
 import { DocumentQAPanel } from "../DocumentQAPanel";
 import { Sparkles, FileText, AlignLeft } from "lucide-react";
 import { toast } from "sonner";
+import { LanguageSelector } from "../LanguageSelector";
+const [language, setLanguage] = useState("English");
+formData.append("language", language);
 
 const API_URL = "http://localhost:5000/api";
 
@@ -50,10 +53,12 @@ export function HomePage() {
         response = await axios.post(`${API_URL}/summarize/text`, {
           text: pastedText,
           format,
+          language,
         });
       }
 
       setSummaryResult({
+        id: response.data.summary._id,
         filename: activeTab === "file" ? selectedFile.name : "Pasted Text",
         summary: response.data.summary.summaryText,
         format: format,
@@ -150,6 +155,30 @@ export function HomePage() {
         {/* Format + Summarize button */}
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
           <FormatToggle value={format} onChange={setFormat} disabled={isLoading} />
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+  <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+    <FormatToggle value={format} onChange={setFormat} disabled={isLoading} />
+    <LanguageSelector value={language} onChange={setLanguage} disabled={isLoading} />
+  </div>
+
+  <button
+    onClick={handleUpload}
+    disabled={isLoading || (activeTab === "file" ? !selectedFile : !pastedText.trim())}
+    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
+  >
+    {isLoading ? (
+      <>
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"></div>
+        Processing...
+      </>
+    ) : (
+      <>
+        <Sparkles className="h-4 w-4" />
+        Summarize
+      </>
+    )}
+  </button>
+</div>
 
           <button
             onClick={handleUpload}
@@ -178,6 +207,7 @@ export function HomePage() {
                 Summary Result
               </h2>
               <SummaryCard
+                id={summaryResult.id}
                 filename={summaryResult.filename}
                 date={summaryResult.date}
                 format={summaryResult.format}

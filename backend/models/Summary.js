@@ -23,6 +23,10 @@ const summarySchema = new mongoose.Schema({
     enum: ['bullets', 'paragraph', 'json'],
     default: 'bullets'
   },
+  summaryLanguage: {
+  type: String,
+  default: 'English'
+},
   summaryText: {
     type: String,
     required: true
