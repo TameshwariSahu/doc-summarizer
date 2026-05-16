@@ -16,13 +16,12 @@
 #         input=texts
 #     )
 #     return [item.embedding for item in response.data]
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
-from sentence_transformers import SentenceTransformer
-
-model = SentenceTransformer('all-MiniLM-L6-v2')
+embedding_fn = DefaultEmbeddingFunction()
 
 def get_embedding(text: str) -> list:
-    return model.encode(text).tolist()
+    return embedding_fn([text])[0]
 
 def get_embeddings_batch(texts: list) -> list:
-    return model.encode(texts).tolist()
+    return embedding_fn(texts)
