@@ -2,9 +2,29 @@ const Summary = require('../models/Summary');
 
 const getHistory = async (req, res, next) => {
   try {
-    const summaries = await Summary.find({ userId: req.user.id })
-      .sort({ createdAt: -1 });
-    res.json(summaries);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100);
+    const skip = (page - 1) * limit;
+
+    const [summaries, total] = await Promise.all([
+      Summary.find({ userId: req.user.id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Summary.countDocuments({ userId: req.user.id })
+    ]);
+
+    res.json({
+      data: summaries,
+      pagination: {
+        currentPage: page,
+        itemsPerPage: limit,
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+        hasPrevPage: page > 1,
+      }
+    });
   } catch (err) {
     next(err);
   }
@@ -57,4 +77,3 @@ const getSummaryPublic = async (req, res, next) => {
 
 module.exports = { getHistory, getSummary, deleteSummary, getSummaryPublic };
 
-module.exports = { getHistory, getSummary, deleteSummary };

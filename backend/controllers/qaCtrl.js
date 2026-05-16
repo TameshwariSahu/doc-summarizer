@@ -126,34 +126,55 @@ const askQuestion = async (req, res, next) => {
     let answer;
     let fallback = false;
 
-    // Pehle RAG try karo — Vector DB se
     const ragResult = await answerWithRAG(contentHash, qDisplay, req.user.id);
 
     if (ragResult) {
       answer = ragResult.answer;
     } else {
-      // Fallback — direct document text se
       try {
         const maxCtx = 14000;
         const ctx = stored.extractedText.length > maxCtx
           ? `${stored.extractedText.slice(0, maxCtx)}\n\n[Document truncated.]`
           : stored.extractedText;
 
-        const response = await openai.chat.completions.create({
-           model: 'llama3-8b-8192',
-          messages: [
-            {
-              role: 'system',
-              content: 'Answer using ONLY the provided document. Be concise and accurate.'
-            },
-            {
-              role: 'user',
-              content: `Document:\n${ctx}\n\nQuestion: ${qDisplay}\n\nAnswer:`
-            }
-          ],
-          max_tokens: 500,
-          temperature: 0.3
-        });
+    const cleanedContext = ctx
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const response = await openai.chat.completions.create({
+  model: 'llama-3.3-70b-versatile',
+  messages: [
+    {
+      role: 'system',
+      content: `
+You are an intelligent document question-answering assistant.
+
+Rules:
+- Answer naturally and professionally
+- Use ONLY information from the document
+- Do NOT copy raw document text
+- Remove unrelated information
+- Give meaningful and contextual answers
+- Make the response human-like and clean
+- Keep answers concise but informative
+`
+    },
+    {
+      role: 'user',
+      content: `
+Question:
+${qDisplay}
+
+Document Context:
+${cleanedContext}
+
+Answer:
+`
+    }
+  ],
+  max_tokens: 300,
+  temperature: 0.5
+});
 
         answer = response.choices[0].message.content;
       } catch (err) {

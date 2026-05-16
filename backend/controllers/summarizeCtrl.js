@@ -1,5 +1,6 @@
 const OpenAI = require('openai');
-const pdfParse = require('pdf-parse');
+const pdfParseLib = require('pdf-parse');
+const pdfParse = pdfParseLib.default || pdfParseLib;
 const mammoth = require('mammoth');
 const axios = require('axios');
 const Summary = require('../models/Summary');
@@ -30,13 +31,35 @@ const chunkText = (text, chunkSize = 3000) => {
   return chunks;
 };
 
+const detectDocumentType = (text) => {
+  const lower = text.toLowerCase();
+
+  if (
+    lower.includes('experience') &&
+    lower.includes('education') &&
+    lower.includes('skills')
+  ) {
+    return 'resume';
+  }
+
+  if (
+    lower.includes('abstract') ||
+    lower.includes('methodology') ||
+    lower.includes('conclusion')
+  ) {
+    return 'research';
+  }
+
+  return 'general';
+};
+
 const buildPrompt = (text, format, language = 'English') => {
   const formats = {
-bullets: `Summarize the following text into 5-6 bullet points.
+    bullets: `Summarize the following text into 5-6 bullet points.
 
 Rules:
 - Each bullet should be 1 sentence, around 20-30 words
-- Be specific — mention actual examples from the text (e.g. data entry, reskilling)
+- Be specific — mention actual examples from the text
 - Do not be too vague or too long
 - Capture the key idea WITH enough context to make sense
 - No filler words or repetition
@@ -52,22 +75,28 @@ Example of a BAD bullet (too long):
 - AI is expected to automate routine cognitive tasks which will lead to job displacement in roles like data entry, customer service, and content generation, however it does not replace the need for humans.
 
 Text:
-${text}
+ ${text}
 
 Balanced Summary:`,
 
-
-    paragraph: `You are an expert analyst. Read the following text and write a meaningful summary in 2-3 paragraphs.
+    paragraph: `Summarize the following text into a concise paragraph.
 
 Rules:
-- Explain the MEANING and SIGNIFICANCE in your own words
-- Focus on the core message and key concepts
-- Be clear and professional
+- The summary MUST be SHORTER than the original text — ideally 25-35% of the original length
+- Do NOT copy or closely paraphrase sentences from the original
+- Extract ONLY the core ideas and key points
+- Write naturally and professionally in continuous paragraph format
+- Do NOT add information, interpretations, or philosophical concepts not in the original
+- Be precise and to-the-point — every sentence must earn its place
+- If the text is short (under 100 words), summary should be 2-3 sentences max
+- If the text is medium (100-300 words), summary should be 4-6 sentences max
+- If the text is long (300+ words), summary should be 6-8 sentences max
+- Write in ${language}
 
 Text:
-${text}
+ ${text}
 
-Summary (in your own words):`,
+Concise Summary:`
   };
   return formats[format] || formats.bullets;
 };
@@ -85,7 +114,6 @@ const getSummaryFromAI = async (text, format, language = 'English') => {
   console.log("=== Groq API Key exists:", !!process.env.GROQ_API_KEY);
   console.log("=== Calling Groq...");
 
-  // ✅ Only one check, not duplicated
   if (!process.env.GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY missing.');
   }
@@ -103,11 +131,22 @@ const getSummaryFromAI = async (text, format, language = 'English') => {
           { role: 'user', content: chunk }
         ],
         max_tokens: 300,
-        temperature: 0.2
+        temperature: 0.5
       });
       chunkSummaries.push(res.choices[0].message.content);
     }
     finalText = chunkSummaries.join('\n\n');
+  }
+
+  // ✅ Dynamic max_tokens based on input length
+  const inputWordCount = finalText.split(/\s+/).length;
+  let maxTokens;
+  if (inputWordCount < 100) {
+    maxTokens = 150;   // Short input → very short summary
+  } else if (inputWordCount < 300) {
+    maxTokens = 250;   // Medium input → short summary
+  } else {
+    maxTokens = 500;   // Long input → moderate summary
   }
 
   const response = await openai.chat.completions.create({
@@ -115,22 +154,23 @@ const getSummaryFromAI = async (text, format, language = 'English') => {
     messages: [
       {
         role: 'system',
-        content: `
-        You are a precise document summarizer.
+        content: `You are a precise and CONCISE document summarizer.
 
-        Rules:
-        - Preserve the original meaning and context
-        - Do not add interpretations, assumptions, or extra philosophical concepts
-        - Only include information explicitly present in the text
-        - Keep summaries concise, coherent, and factually grounded
-        `
+STRICT RULES:
+- The summary MUST be significantly shorter than the original text
+- NEVER write a summary that is longer than or equal to the input
+- Do NOT add interpretations, assumptions, or extra philosophical concepts
+- Only include information explicitly present in the text
+- Every sentence must convey new information — no repetition
+- If the input is short, the summary should be even shorter
+- Be direct and factual — remove all fluff`
       },
       {
         role: 'user',
         content: buildPrompt(finalText, format, language)
       }
     ],
-    max_tokens: 1000,
+    max_tokens: maxTokens,   // ✅ Dynamic limit
     temperature: 0.2,
   });
 

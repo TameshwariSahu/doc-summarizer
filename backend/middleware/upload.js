@@ -3,13 +3,16 @@ const multer = require('multer');
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  if (
-    file.mimetype === 'application/pdf' ||
-    file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  ) {
+  const allowedMimes = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/octet-stream' // some browsers send this for PDF
+  ];
+
+  if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Sirf PDF aur DOCX files allowed hain!'), false);
+    cb(new Error('Only PDF and DOCX files are allowed!'), false);
   }
 };
 
