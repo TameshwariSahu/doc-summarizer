@@ -1,4 +1,5 @@
 const Summary = require('../models/Summary');
+const AppError = require('../utils/AppError');
 
 const getHistory = async (req, res, next) => {
   try {
@@ -45,7 +46,7 @@ const getSummary = async (req, res, next) => {
   }
 };
 
-const deleteSummary = async (req, res) => {
+const deleteSummary = async (req, res, next) => {
   try {
     const summary = await Summary.findOneAndDelete({
       _id: req.params.id,
