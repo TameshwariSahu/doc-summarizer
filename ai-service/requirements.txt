@@ -5,14 +5,9 @@
 # chromadb==0.4.10
 # mem0ai==0.1.11
 # python-dotenv==1.0.0
-fastapi
-uvicorn
-openai
-chromadb
-mem0ai
-python-multipart
-pypdf2
-python-docx
-tiktoken
-python-dotenv
-sentence-transformers
+
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+openai>=1.33.0
+chromadb>=0.5.0
+python-dotenv>=1.0.0
