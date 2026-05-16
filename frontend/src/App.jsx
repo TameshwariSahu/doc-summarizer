@@ -27,8 +27,8 @@ function AppRoutes() {
         <Route path="/register" element={<AuthRedirect><RegisterPage /></AuthRedirect>} />
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-        <Route path="*" element={<NotFoundPage />} />
         <Route path="/share/:id" element={<SharePage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </div>
   );
