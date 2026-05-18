@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { LanguageSelector } from "../LanguageSelector";
 import { API_URL } from "@/lib/api";
 
-const API_URL = "http://localhost:5000/api";
 
 export function HomePage() {
   const [activeTab, setActiveTab] = useState("file");

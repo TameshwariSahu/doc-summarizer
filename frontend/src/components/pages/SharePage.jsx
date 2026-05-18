@@ -4,7 +4,6 @@ import axios from "axios";
 import { FileText } from "lucide-react";
 import { API_URL } from "@/lib/api";
 
-const API_URL = "http://localhost:5000/api";
 
 export function SharePage() {
   const { id } = useParams();

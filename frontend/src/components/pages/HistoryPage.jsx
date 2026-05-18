@@ -6,7 +6,6 @@ import { History, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { API_URL } from "@/lib/api";
 
-const API_URL = "http://localhost:5000/api";
 const ITEMS_PER_PAGE = 10;
 
 export function HistoryPage() {
