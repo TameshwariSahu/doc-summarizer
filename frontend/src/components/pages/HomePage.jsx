@@ -7,8 +7,9 @@ import { DocumentQAPanel } from "../DocumentQAPanel";
 import { Sparkles, FileText, AlignLeft } from "lucide-react";
 import { toast } from "sonner";
 import { LanguageSelector } from "../LanguageSelector";
-import { API_URL } from "@/lib/api";
+// import { API_URL } from "@/lib/api";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export function HomePage() {
   const [activeTab, setActiveTab] = useState("file");

@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { FileText } from "lucide-react";
-import { API_URL } from "@/lib/api";
+// import { API_URL } from "@/lib/api";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export function SharePage() {
   const { id } = useParams();

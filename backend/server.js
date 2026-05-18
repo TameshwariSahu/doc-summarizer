@@ -20,9 +20,10 @@ app.use(cors({
     if (!origin) return callback(null, true);
 
     const allowedOrigins = [
-      'http://localhost:5173',
-      'https://doc-summarizer-xi.vercel.app'
-    ];
+  'http://localhost:5173',
+  'https://doc-summarizer-xi.vercel.app',
+  'https://doc-summarizer-4aid.onrender.com'
+];
 
     // Allow any Vercel preview deployment URL
     if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
