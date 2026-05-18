@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import { API_URL } from "@/lib/api";
 
 const API_URL = "http://localhost:5000/api";
 

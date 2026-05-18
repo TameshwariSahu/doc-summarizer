@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { MessageCircle, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { API_URL } from "@/lib/api";
 
 const API_URL = "http://localhost:5000/api";
 
