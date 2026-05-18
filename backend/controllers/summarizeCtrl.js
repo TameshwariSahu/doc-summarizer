@@ -54,6 +54,9 @@ const detectDocumentType = (text) => {
 };
 
 const buildPrompt = (text, format, language = 'English') => {
+  const isEnglish = language === 'English';
+  const langInstruction = isEnglish ? '' : `\n\nCRITICAL REQUIREMENT: You MUST write the ENTIRE summary in ${language} language. Do NOT use English. Every single word must be in ${language}. If you write in English, the response will be rejected.`;
+
   const formats = {
     bullets: `Summarize the following text into 5-6 bullet points.
 
@@ -63,21 +66,12 @@ Rules:
 - Do not be too vague or too long
 - Capture the key idea WITH enough context to make sense
 - No filler words or repetition
-- Write the summary in ${language} language
-
-Example of a GOOD bullet:
-- AI will automate routine tasks like data entry and customer service, displacing some jobs but creating new high-value roles.
-
-Example of a BAD bullet (too short):
-- AI automates tasks.
-
-Example of a BAD bullet (too long):
-- AI is expected to automate routine cognitive tasks which will lead to job displacement in roles like data entry, customer service, and content generation, however it does not replace the need for humans.
+- Write the summary in ${language} language${langInstruction}
 
 Text:
  ${text}
 
-Balanced Summary:`,
+Balanced Summary in ${language}:`,
 
     paragraph: `Summarize the following text into a concise paragraph.
 
@@ -91,12 +85,12 @@ Rules:
 - If the text is short (under 100 words), summary should be 2-3 sentences max
 - If the text is medium (100-300 words), summary should be 4-6 sentences max
 - If the text is long (300+ words), summary should be 6-8 sentences max
-- Write in ${language}
+- Write in ${language}${langInstruction}
 
 Text:
  ${text}
 
-Concise Summary:`
+Concise Summary in ${language}:`
   };
   return formats[format] || formats.bullets;
 };
@@ -127,7 +121,8 @@ const getSummaryFromAI = async (text, format, language = 'English') => {
       const res = await openai.chat.completions.create({
         model: 'llama3-8b-8192',
         messages: [
-        { role: 'system', content: `Summarize this section briefly in 3-4 sentences in your own words. Write in ${language}.` }, { role: 'user', content: chunk }
+                 { role: 'system', content: `Summarize this section briefly in 3-4 sentences in your own words. Write in ${language}.` },
+          { role: 'user', content: chunk }
         ],
         max_tokens: 300,
         temperature: 0.5
@@ -261,7 +256,6 @@ const summarizeText = async (req, res, next) => {
   try {
     const { text: bodyText, format } = req.body;
     const language = req.body.language || 'English';
-    console.log("=== Language:", language);
 
     if (!bodyText || typeof bodyText !== 'string' || !bodyText.trim()) {
       return next(new AppError(400, 'Please send text!'));
