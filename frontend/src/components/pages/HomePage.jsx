@@ -46,6 +46,7 @@ export function HomePage() {
         const formData = new FormData();
         formData.append("file", selectedFile);
         formData.append("format", format);
+        formData.append("language", language);
                const token = localStorage.getItem("token");
         response = await axios.post(`${API_URL}/summarize/upload`, formData, {
           headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
