@@ -31,28 +31,6 @@ const chunkText = (text, chunkSize = 3000) => {
   return chunks;
 };
 
-const detectDocumentType = (text) => {
-  const lower = text.toLowerCase();
-
-  if (
-    lower.includes('experience') &&
-    lower.includes('education') &&
-    lower.includes('skills')
-  ) {
-    return 'resume';
-  }
-
-  if (
-    lower.includes('abstract') ||
-    lower.includes('methodology') ||
-    lower.includes('conclusion')
-  ) {
-    return 'research';
-  }
-
-  return 'general';
-};
-
 const buildPrompt = (text, format, language = 'English') => {
   const formats = {
     bullets: `Summarize the following text into 5-6 bullet points.
@@ -64,15 +42,6 @@ Rules:
 - Capture the key idea WITH enough context to make sense
 - No filler words or repetition
 - Write the summary in ${language} language
-
-Example of a GOOD bullet:
-- AI will automate routine tasks like data entry and customer service, displacing some jobs but creating new high-value roles.
-
-Example of a BAD bullet (too short):
-- AI automates tasks.
-
-Example of a BAD bullet (too long):
-- AI is expected to automate routine cognitive tasks which will lead to job displacement in roles like data entry, customer service, and content generation, however it does not replace the need for humans.
 
 Text:
  ${text}
@@ -111,9 +80,6 @@ const buildLocalFallbackSummary = (text) => {
 };
 
 const getSummaryFromAI = async (text, format, language = 'English') => {
-  console.log("=== Groq API Key exists:", !!process.env.GROQ_API_KEY);
-  console.log("=== Calling Groq...");
-
   if (!process.env.GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY missing.');
   }
@@ -127,7 +93,8 @@ const getSummaryFromAI = async (text, format, language = 'English') => {
       const res = await openai.chat.completions.create({
         model: 'llama3-8b-8192',
         messages: [
-        { role: 'system', content: `Summarize this section briefly in 3-4 sentences in your own words. Write in ${language}.` }, { role: 'user', content: chunk }
+          { role: 'system', content: `Summarize this section briefly in 3-4 sentences in your own words. Write in ${language}.` },
+          { role: 'user', content: chunk }
         ],
         max_tokens: 300,
         temperature: 0.5
@@ -137,15 +104,14 @@ const getSummaryFromAI = async (text, format, language = 'English') => {
     finalText = chunkSummaries.join('\n\n');
   }
 
-  // ✅ Dynamic max_tokens based on input length
   const inputWordCount = finalText.split(/\s+/).length;
   let maxTokens;
   if (inputWordCount < 100) {
-    maxTokens = 150;   // Short input → very short summary
+    maxTokens = 150;
   } else if (inputWordCount < 300) {
-    maxTokens = 250;   // Medium input → short summary
+    maxTokens = 250;
   } else {
-    maxTokens = 500;   // Long input → moderate summary
+    maxTokens = 500;
   }
 
   const response = await openai.chat.completions.create({
@@ -170,18 +136,15 @@ STRICT RULES:
         content: buildPrompt(finalText, format, language)
       }
     ],
-    max_tokens: maxTokens,   // ✅ Dynamic limit
+    max_tokens: maxTokens,
     temperature: 0.2,
   });
 
-  console.log("=== Groq Response received!");
   return response.choices[0].message.content;
 };
 
-// ✅ summarizeFile — fully fixed
 const summarizeFile = async (req, res, next) => {
   try {
-    // ✅ All variables declared FIRST before any use
     let extractedText = '';
     let fileType = '';
 
@@ -189,7 +152,7 @@ const summarizeFile = async (req, res, next) => {
 
     const requestedFormat = req.body.format || 'bullets';
     const format = ALLOWED_FORMATS.has(requestedFormat) ? requestedFormat : 'bullets';
-    const language = req.body.language || 'English'; // ✅ declared before use
+    const language = req.body.language || 'English';
 
     if (req.file.mimetype === 'application/pdf') {
       const pdfData = await pdfParse(req.file.buffer);
@@ -212,7 +175,6 @@ const summarizeFile = async (req, res, next) => {
       { upsert: true }
     );
 
-    // Store in vector DB
     try {
       await axios.post(`${AI_SERVICE_URL}/store`, {
         content_hash: contentHash,
@@ -222,14 +184,12 @@ const summarizeFile = async (req, res, next) => {
       console.log('AI service store failed:', e.message);
     }
 
-    // ✅ Only ONE call to getSummaryFromAI, with language passed
     let summaryText;
     let fallback = false;
 
     try {
       summaryText = await getSummaryFromAI(extractedText, format, language);
     } catch (err) {
-      console.log("=== Groq ERROR:", err.status, err.message);
       summaryText = buildLocalFallbackSummary(extractedText);
       fallback = true;
     }
@@ -256,12 +216,10 @@ const summarizeFile = async (req, res, next) => {
   }
 };
 
-// ✅ summarizeText — fully fixed
 const summarizeText = async (req, res, next) => {
   try {
-    // ✅ All variables declared FIRST before any use
     const { text: bodyText, format } = req.body;
-    const language = req.body.language || 'English'; // ✅ declared before use
+    const language = req.body.language || 'English';
 
     if (!bodyText || typeof bodyText !== 'string' || !bodyText.trim()) {
       return next(new AppError(400, 'Please send text!'));
@@ -277,7 +235,6 @@ const summarizeText = async (req, res, next) => {
       { upsert: true }
     );
 
-    // Store in vector DB
     try {
       await axios.post(`${AI_SERVICE_URL}/store`, {
         content_hash: contentHash,
@@ -287,19 +244,16 @@ const summarizeText = async (req, res, next) => {
       console.log('AI service store failed:', e.message);
     }
 
-    // ✅ Only ONE call to getSummaryFromAI, with language passed
     let summaryText;
     let fallback = false;
 
     try {
       summaryText = await getSummaryFromAI(text, safeFormat, language);
     } catch (err) {
-      console.log("=== Groq ERROR:", err.status, err.message);
       summaryText = buildLocalFallbackSummary(text);
       fallback = true;
     }
 
-    // ✅ Removed req.file.originalname and fileType (don't exist in text route)
     const summary = await Summary.create({
       userId: req.user.id,
       fileName: 'Plain Text',
