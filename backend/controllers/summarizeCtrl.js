@@ -127,8 +127,7 @@ const getSummaryFromAI = async (text, format, language = 'English') => {
       const res = await openai.chat.completions.create({
         model: 'llama3-8b-8192',
         messages: [
-          { role: 'system', content: 'Summarize this section briefly in 3-4 sentences in your own words.' },
-          { role: 'user', content: chunk }
+        { role: 'system', content: `Summarize this section briefly in 3-4 sentences in your own words. Write in ${language}.` }, { role: 'user', content: chunk }
         ],
         max_tokens: 300,
         temperature: 0.5
@@ -163,7 +162,8 @@ STRICT RULES:
 - Only include information explicitly present in the text
 - Every sentence must convey new information — no repetition
 - If the input is short, the summary should be even shorter
-- Be direct and factual — remove all fluff`
+- Be direct and factual — remove all fluff
+- IMPORTANT: You MUST write the summary in ${language} language. Do NOT write in English unless the language is English.`
       },
       {
         role: 'user',
