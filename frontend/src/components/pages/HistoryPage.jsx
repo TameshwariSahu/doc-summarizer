@@ -4,9 +4,7 @@ import { SummaryCard } from "../SummaryCard";
 import { DocumentQAPanel } from "../DocumentQAPanel";
 import { History, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-// import { API_URL } from "@/lib/api";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API_URL } from "@/lib/api";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -28,8 +26,10 @@ export function HistoryPage() {
   const fetchHistory = async (page) => {
     setIsLoading(true);
     try {
+      const token = localStorage.getItem("token");
       const res = await axios.get(`${API_URL}/history`, {
         params: { page, limit: ITEMS_PER_PAGE },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setSummaries(res.data.data);
       setPagination(res.data.pagination);
@@ -42,7 +42,10 @@ export function HistoryPage() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${API_URL}/history/${id}`);
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_URL}/history/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (summaries.length === 1 && currentPage > 1) {
         setCurrentPage((prev) => prev - 1);
       } else {

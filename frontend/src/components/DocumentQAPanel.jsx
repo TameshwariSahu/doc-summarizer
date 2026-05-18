@@ -18,7 +18,10 @@ export function DocumentQAPanel({ contentHash, disabled }) {
     (async () => {
       setLoadingFaq(true);
       try {
-        const res = await axios.get(`${API_URL}/qa/faq/${contentHash}`);
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${API_URL}/qa/faq/${contentHash}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!cancelled) setFaq(res.data);
       } catch (e) {
         if (!cancelled) {
@@ -38,13 +41,18 @@ export function DocumentQAPanel({ contentHash, disabled }) {
     if (!question.trim() || !contentHash) return;
     setAsking(true);
     try {
+      const token = localStorage.getItem("token");
       const res = await axios.post(`${API_URL}/qa/ask`, {
         contentHash,
         question: question.trim(),
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       toast.success(res.data.fallback ? "Answer ready (offline lookup)" : "Answer ready");
       setQuestion("");
-      const refresh = await axios.get(`${API_URL}/qa/faq/${contentHash}`);
+      const refresh = await axios.get(`${API_URL}/qa/faq/${contentHash}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setFaq(refresh.data);
       setOpenItems({ 0: true });
     } catch (err) {

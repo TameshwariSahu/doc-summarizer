@@ -7,9 +7,9 @@ import { DocumentQAPanel } from "../DocumentQAPanel";
 import { Sparkles, FileText, AlignLeft } from "lucide-react";
 import { toast } from "sonner";
 import { LanguageSelector } from "../LanguageSelector";
-// import { API_URL } from "@/lib/api";
+import { API_URL } from "@/lib/api";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export function HomePage() {
   const [activeTab, setActiveTab] = useState("file");
@@ -46,19 +46,21 @@ export function HomePage() {
         const formData = new FormData();
         formData.append("file", selectedFile);
         formData.append("format", format);
-        formData.append("language", language); 
+               const token = localStorage.getItem("token");
         response = await axios.post(`${API_URL}/summarize/upload`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
         });
       } else {
+                const token = localStorage.getItem("token");
         response = await axios.post(`${API_URL}/summarize/text`, {
           text: pastedText,
           format,
           language,
+        }, {
+          headers: { Authorization: `Bearer ${token}` },
         });
         
       }
-console.log("Full response:", response.data);
       setSummaryResult({
         id: response.data.summary._id,
         filename: activeTab === "file" ? selectedFile.name : "Pasted Text",
