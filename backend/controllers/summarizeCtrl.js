@@ -105,6 +105,7 @@ const buildLocalFallbackSummary = (text) => {
 };
 
 const getSummaryFromAI = async (text, format, language = 'English') => {
+  console.log("=== Language received:", language);
   console.log("=== Groq API Key exists:", !!process.env.GROQ_API_KEY);
   console.log("=== Calling Groq...");
 
@@ -144,30 +145,24 @@ const getSummaryFromAI = async (text, format, language = 'English') => {
   }
 
   const response = await openai.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      {
-        role: 'system',
-        content: `You are a precise and CONCISE document summarizer.
-
-STRICT RULES:
-- The summary MUST be significantly shorter than the original text
-- NEVER write a summary that is longer than or equal to the input
-- Do NOT add interpretations, assumptions, or extra philosophical concepts
-- Only include information explicitly present in the text
-- Every sentence must convey new information — no repetition
-- If the input is short, the summary should be even shorter
-- Be direct and factual — remove all fluff
-- IMPORTANT: You MUST write the summary in ${language} language. Do NOT write in English unless the language is English.`
-      },
-      {
-        role: 'user',
-        content: buildPrompt(finalText, format, language)
-      }
-    ],
-    max_tokens: maxTokens,   // ✅ Dynamic limit
-    temperature: 0.2,
-  });
+  model: 'llama-3.1-8b-instant', // better multilingual support
+  messages: [
+    {
+      role: 'system',
+      content: `You are a multilingual document summarizer. 
+CRITICAL: You MUST respond ONLY in ${language} language.
+If language is Hindi, write in Devanagari script.
+If language is Gujarati, write in Gujarati script.
+Do NOT use English unless language is English.`
+    },
+    {
+      role: 'user',
+      content: buildPrompt(finalText, format, language)
+    }
+  ],
+  max_tokens: maxTokens,
+  temperature: 0.2,
+});
 
   console.log("=== Groq Response received!");
   return response.choices[0].message.content;
@@ -253,6 +248,9 @@ const summarizeFile = async (req, res, next) => {
 
 // ✅ summarizeText — fully fixed
 const summarizeText = async (req, res, next) => {
+  
+      const language = req.body.language || 'English';
+      console.log("=== Language:", language);
   try {
     const { text: bodyText, format } = req.body;
     const language = req.body.language || 'English';
